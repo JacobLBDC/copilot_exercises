@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Reset activity select options
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
@@ -26,6 +29,87 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
+
+        // Create participants section
+        const participantsDiv = document.createElement('div');
+        participantsDiv.className = 'participants';
+        const title = document.createElement('p');
+        title.className = 'participants-title';
+        title.innerHTML = '<strong>Participants</strong>';
+        participantsDiv.appendChild(title);
+
+        if (details.participants && details.participants.length > 0) {
+          const ul = document.createElement('ul');
+          ul.className = 'participants-list';
+          details.participants.forEach((p) => {
+            const li = document.createElement('li');
+
+            const avatar = document.createElement('span');
+            avatar.className = 'avatar';
+            // derive initials from local part of email or name-like string
+            const local = (p || '').split('@')[0] || '';
+            const initials = local
+              .split(/[\.\-_]/)
+              .map(s => s[0]?.toUpperCase())
+              .filter(Boolean)
+              .slice(0, 2)
+              .join('');
+            avatar.textContent = initials || 'U';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'name';
+            nameSpan.textContent = p;
+            // delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.title = `Remove ${p}`;
+            deleteBtn.innerHTML = '✖';
+
+            // click handler to unregister participant
+            deleteBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const confirmRemove = confirm(`Remove ${p} from ${name}?`);
+              if (!confirmRemove) return;
+              try {
+                const res = await fetch(
+                  `/activities/${encodeURIComponent(name)}/participants?email=${encodeURIComponent(p)}`,
+                  { method: 'DELETE' }
+                );
+                const result = await res.json();
+                if (res.ok) {
+                  messageDiv.textContent = result.message;
+                  messageDiv.className = 'success';
+                } else {
+                  messageDiv.textContent = result.detail || 'Failed to remove participant';
+                  messageDiv.className = 'error';
+                }
+                messageDiv.classList.remove('hidden');
+                // refresh activities list
+                fetchActivities();
+                setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+              } catch (err) {
+                console.error('Error removing participant:', err);
+                messageDiv.textContent = 'Failed to remove participant. Please try again.';
+                messageDiv.className = 'error';
+                messageDiv.classList.remove('hidden');
+                setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+              }
+            });
+
+            li.appendChild(avatar);
+            li.appendChild(nameSpan);
+            li.appendChild(deleteBtn);
+            ul.appendChild(li);
+          });
+          participantsDiv.appendChild(ul);
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'participants-empty';
+          empty.textContent = 'No participants yet';
+          participantsDiv.appendChild(empty);
+        }
+
+        activityCard.appendChild(participantsDiv);
 
         activitiesList.appendChild(activityCard);
 
@@ -62,6 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // refresh activities so the newly-registered participant appears
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";

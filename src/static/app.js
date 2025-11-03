@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Reset activity select options
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
@@ -26,6 +29,50 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
+
+        // Create participants section
+        const participantsDiv = document.createElement('div');
+        participantsDiv.className = 'participants';
+        const title = document.createElement('p');
+        title.className = 'participants-title';
+        title.innerHTML = '<strong>Participants</strong>';
+        participantsDiv.appendChild(title);
+
+        if (details.participants && details.participants.length > 0) {
+          const ul = document.createElement('ul');
+          ul.className = 'participants-list';
+          details.participants.forEach((p) => {
+            const li = document.createElement('li');
+
+            const avatar = document.createElement('span');
+            avatar.className = 'avatar';
+            // derive initials from local part of email or name-like string
+            const local = (p || '').split('@')[0] || '';
+            const initials = local
+              .split(/[\.\-_]/)
+              .map(s => s[0]?.toUpperCase())
+              .filter(Boolean)
+              .slice(0, 2)
+              .join('');
+            avatar.textContent = initials || 'U';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'name';
+            nameSpan.textContent = p;
+
+            li.appendChild(avatar);
+            li.appendChild(nameSpan);
+            ul.appendChild(li);
+          });
+          participantsDiv.appendChild(ul);
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'participants-empty';
+          empty.textContent = 'No participants yet';
+          participantsDiv.appendChild(empty);
+        }
+
+        activityCard.appendChild(participantsDiv);
 
         activitiesList.appendChild(activityCard);
 

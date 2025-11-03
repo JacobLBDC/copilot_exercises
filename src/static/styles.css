@@ -195,6 +195,22 @@ footer {
   word-break: break-all;
 }
 
+/* delete button next to participant */
+.delete-btn {
+  margin-left: 10px;
+  background: transparent;
+  border: none;
+  color: #c62828;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.delete-btn:hover {
+  background: rgba(198,40,40,0.08);
+}
+
 .participants-empty {
   font-style: italic;
   color: #666;
